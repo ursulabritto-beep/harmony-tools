@@ -470,7 +470,7 @@ $('btn-pdf').addEventListener('click', function(){
         else Y+=30;
       }
       resBox('EXTERNAL — Require from supplier:',D.ext_res,D.ext_det||null);
-      Y+=4;resBox('INTERNAL — Action on product:',D.int_res,D.int_det||null);Y+=6;
+      Y+=6;
 
       // Photos
       var photos=D.media.filter(function(m){return !m.isVid;});
@@ -489,6 +489,28 @@ $('btn-pdf').addEventListener('click', function(){
         if(col===1) Y+=ph+8;
       }
 
+      // Photo links section
+      if(photos.length > 0){
+        chk(30);
+        doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+        doc.text('Defect Photo Links',M,Y+10);Y+=18;
+        photos.forEach(function(p,i){
+          chk(16);
+          doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+          doc.text((i+1)+'. '+p.name,M,Y+9);
+          if(p.hsUrl){
+            doc.setTextColor(26,86,179);
+            doc.textWithLink(p.hsUrl, M, Y+20, {url: p.hsUrl});
+            doc.setTextColor(26,26,26);
+            Y+=28;
+          } else {
+            Y+=14;
+          }
+        });
+        Y+=4;
+      }
+
       // Signatures
       chk(70);Y+=6;
       doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
@@ -500,8 +522,30 @@ $('btn-pdf').addEventListener('click', function(){
       doc.setFont('helvetica','oblique');doc.setFontSize(7.5);doc.setTextColor(136,136,136);
       doc.text('Name & Signature',M,Y+8);doc.text('Name & Signature',M+sw+24,Y+8);
 
-      doc.save('Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf');
-      $('ok8').textContent='✓ PDF downloaded!';show($('ok8'),true);
+      var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
+      doc.save(pdfFilename);
+
+      // If ticket was already created, upload PDF to HubSpot
+      var lastTicketId = window._lastTicketId;
+      if(lastTicketId){
+        var pdfB64 = doc.output('datauristring');
+        var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
+        fetch(WORKER,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'upload_pdf', ticket_id:lastTicketId, pdf_data:pdfB64, filename:pdfFilename})
+        }).then(function(r){return r.json();})
+        .then(function(d){
+          if(d.success){
+            $('ok8').textContent='✓ PDF downloaded and attached to HubSpot note!';
+          } else {
+            $('ok8').textContent='✓ PDF downloaded! (HubSpot attach failed: '+d.error+')';
+          }
+          show($('ok8'),true);
+        }).catch(function(){ $('ok8').textContent='✓ PDF downloaded!'; show($('ok8'),true); });
+      } else {
+        $('ok8').textContent='✓ PDF downloaded!';show($('ok8'),true);
+      }
     }catch(e){
       $('e8').textContent='PDF error: '+e.message;show($('e8'),true);
     }
@@ -564,6 +608,7 @@ $('btn-hs').addEventListener('click', function(){
     '',
     'Media: '+D.media.filter(function(m){return !m.isVid;}).length+' photo(s), '+D.media.filter(function(m){return m.isVid;}).length+' video(s)',
   ].join('\n');
+  // noteBody is also used as the ticket description fallback
 
   var supplierMap = {
     'Century':'century','Woods':'harmony_brazil','Arbosso':'Arbosso',
@@ -604,12 +649,25 @@ $('btn-hs').addEventListener('click', function(){
   .then(function(r){
     if(!r.ok) throw new Error(r.data.message||JSON.stringify(r.data));
     var ticketId = r.data.ticket_id;
+    window._lastTicketId = ticketId; // store for PDF upload
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
+    // Store uploaded photo URLs back into photos array for PDF
+    if(r.data.photo_urls && r.data.photo_urls.length > 0){
+      var uploadedUrls = r.data.photo_urls;
+      photos.forEach(function(p, i){
+        if(uploadedUrls[i]) p.hsUrl = uploadedUrls[i].url;
+      });
+    }
+
     var msg = '✓ Ticket #'+ticketId+' created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open →</a>';
     if(r.data.note_id) msg += '<br><small>✓ Note created</small>';
-    else msg += '<br><small style="color:#c0392b">✗ Note: '+(r.data.note_error||'failed')+'</small>';
+    else msg += '<br><small style="color:#c0392b">✗ Note error: '+JSON.stringify(r.data.note_error)+'</small>';
     if(r.data.photos_uploaded > 0) msg += '<br><small>✓ '+r.data.photos_uploaded+' photo(s) uploaded</small>';
-    if(r.data.photos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.photos_failed+' photo(s) failed</small>';
+    if(r.data.photos_failed > 0){
+      var perrs = (r.data.photo_errors||[]).join(' | ');
+      msg += '<br><small style="color:#c0392b">✗ Photo failed: '+perrs+'</small>';
+    }
+    msg += '<br><small style="color:#555">📄 Download PDF to attach to HubSpot note</small>';
     $('ok8').innerHTML = msg;
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';

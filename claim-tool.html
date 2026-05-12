@@ -573,80 +573,46 @@ $('btn-hs').addEventListener('click', function(){
   };
   var supplierVal = supplierMap[D.supplier] || D.supplier;
   var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
-  var ticketId = null;
 
-  // Step 1: Create ticket
+  // Build photo links inline in description (base64 thumbnails as data URIs in note)
+  var photos = D.media.filter(function(m){return !m.isVid;});
+  var photoSection = '';
+  if(photos.length > 0){
+    photoSection = '\n\nPHOTOS ATTACHED: '+photos.length+' image'+(photos.length>1?'s':'')+' (see note in HubSpot)';
+  }
+
+  // Single API call — everything in one shot
   fetch(WORKER, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      action: 'create_ticket',
-      properties:{
+      action: 'create_ticket_full',
+      ticket: {
         subject: ticketName,
-        content: description,
+        content: description + photoSection,
         hs_ticket_priority: D.type==='External'?'HIGH':'MEDIUM',
         hs_pipeline: D.type==='External'?'0':'136340495',
         hs_pipeline_stage: D.type==='External'?'1':'235011235',
         supplier: supplierVal,
         hubspot_owner_id: '77262383',
-      }
+      },
+      note: noteBody,
+      photos: photos.map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};})
     })
   })
   .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
   .then(function(r){
     if(!r.ok) throw new Error(r.data.message||JSON.stringify(r.data));
-    ticketId = r.data.id;
+    var ticketId = r.data.ticket_id;
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
-
-    // Show success immediately
-    $('ok8').innerHTML='✓ Ticket #'+ticketId+' created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open →</a>';
+    var msg = '✓ Ticket #'+ticketId+' created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open →</a>';
+    if(r.data.note_id) msg += '<br><small>✓ Note created</small>';
+    else msg += '<br><small style="color:#c0392b">✗ Note: '+(r.data.note_error||'failed')+'</small>';
+    if(r.data.photos_uploaded > 0) msg += '<br><small>✓ '+r.data.photos_uploaded+' photo(s) uploaded</small>';
+    if(r.data.photos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.photos_failed+' photo(s) failed</small>';
+    $('ok8').innerHTML = msg;
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
-
-    // Step 2: Create summary note
-    fetch(WORKER, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'create_note', ticket_id:ticketId, note:noteBody})
-    }).then(function(r){return r.json();})
-    .then(function(d){
-      if(d.success){
-        $('ok8').innerHTML += '<br><small>✓ Note created</small>';
-      } else {
-        $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Note failed: '+JSON.stringify(d)+'</small>';
-      }
-    }).catch(function(e){
-      $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Note error: '+e.message+'</small>';
-    });
-
-    // Step 3: Upload photos one by one with stagger
-    var photos = D.media.filter(function(m){return !m.isVid;});
-    if(photos.length > 0){
-      photos.forEach(function(p, i){
-        setTimeout(function(){
-          fetch(WORKER, {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              action:'upload_photo',
-              ticket_id:ticketId,
-              photo:{name:p.name, data:p.data, type:p.type||'image/jpeg'}
-            })
-          }).then(function(r){return r.json();})
-          .then(function(d){
-            if(d.success){
-              $('ok8').innerHTML += '<br><small>✓ Photo uploaded: '+p.name+'</small>';
-            } else {
-              $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Photo failed: '+JSON.stringify(d)+'</small>';
-            }
-          }).catch(function(e){
-            $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Photo error: '+e.message+'</small>';
-          });
-        }, i * 3000);
-      });
-    } else {
-      $('ok8').innerHTML += '<br><small style="color:#888">No photos to upload</small>';
-    }
   })
   .catch(function(e){
     $('e8').textContent='Error: '+e.message;show($('e8'),true);

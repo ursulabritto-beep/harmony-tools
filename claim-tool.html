@@ -525,41 +525,107 @@ $('btn-hs').addEventListener('click', function(){
   btn.disabled=true;lbl.textContent='Creating...';spin.style.display='inline-block';
 
   var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
-  var body=[
-    'CLAIM: '+D.claimNum,'Date: '+date,'Type: '+D.type+' Claim','',
+  var productFull = D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'');
+  var qtyStr = D.qty+' piece'+(parseInt(D.qty)>1?'s':'');
+
+  var ticketName = D.po+' - '+D.product;
+
+  var description = [
+    'Type: '+D.type+' Claim',
+    '',
     'HSM / PO: '+D.po,
-    'Product: '+D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:''),
-    'Defective Qty: '+D.qty+' piece'+(parseInt(D.qty)>1?'s':''),
-    'Supplier: '+D.supplier,'',
-    'DEFECT:',D.defect,'',
+    'Product: '+productFull,
+    'Defective Qty: '+qtyStr,
+    'Supplier: '+D.supplier,
+    '',
+    'DEFECT:',
+    D.defect,
+    '',
     'External Resolution: '+D.ext_res+(D.ext_det?' — '+D.ext_det:''),
     'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),
   ].join('\n');
 
-  fetch('https://harmony-hubspot.ursula-britto.workers.dev',{
+  var noteBody = [
+    '--- DEFECT CLAIM: '+D.claimNum+' ---',
+    'Date: '+date,
+    'Type: '+D.type+' Claim',
+    '',
+    'HSM / PO: '+D.po,
+    'Product: '+productFull,
+    'Defective Qty: '+qtyStr,
+    'Supplier: '+D.supplier,
+    '',
+    'DEFECT:',
+    D.defect,
+    '',
+    'External Resolution: '+D.ext_res+(D.ext_det?' — '+D.ext_det:''),
+    'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),
+    '',
+    'Media: '+D.media.filter(function(m){return !m.isVid;}).length+' photo(s), '+D.media.filter(function(m){return m.isVid;}).length+' video(s)',
+  ].join('\n');
+
+  var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
+  var ticketId = null;
+
+  // Step 1: Create ticket
+  fetch(WORKER, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({properties:{
-      subject:'['+D.type.toUpperCase()+'] '+D.claimNum+' · '+D.product+' · '+D.supplier,
-      content:body,
-      hs_ticket_priority:D.type==='External'?'HIGH':'MEDIUM',
-      hs_pipeline:'0',hs_pipeline_stage:'1'
-    }})
+    body:JSON.stringify({
+      action: 'create_ticket',
+      properties:{
+        subject: ticketName,
+        content: description,
+        hs_ticket_priority: D.type==='External'?'HIGH':'MEDIUM',
+        hs_pipeline: D.type==='External'?'0':'136340495',
+        hs_pipeline_stage: D.type==='External'?'1':'235011235',
+        supplier: D.supplier,
+        hubspot_owner_id: '77262383',
+      }
+    })
   })
   .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
   .then(function(r){
-    if(r.ok){
-      var url='https://app.hubspot.com/contacts/tickets/'+r.data.id;
-      $('ok8').innerHTML='✓ Ticket created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open #'+r.data.id+' →</a>';
-      show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
-    } else {
-      $('e8').textContent='HubSpot: '+(r.data.message||JSON.stringify(r.data));show($('e8'),true);
-      btn.disabled=false;lbl.textContent='🔗 Create HubSpot Ticket';spin.style.display='none';
-    }
+    if(!r.ok) throw new Error(r.data.message||JSON.stringify(r.data));
+    ticketId = r.data.id;
+
+    // Step 2: Create note with full details + photo count
+    return fetch(WORKER, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action: 'create_note',
+        ticket_id: ticketId,
+        note: noteBody,
+      })
+    });
+  })
+  .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
+  .then(function(r){
+    if(!r.ok) console.warn('Note failed:', r.data);
+
+    // Step 3: Upload photos as note attachments if any
+    var photos = D.media.filter(function(m){return !m.isVid;});
+    if(photos.length === 0) return Promise.resolve();
+    return fetch(WORKER, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action: 'upload_photos',
+        ticket_id: ticketId,
+        photos: photos.map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};})
+      })
+    });
+  })
+  .then(function(){
+    var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
+    $('ok8').innerHTML='✓ Ticket created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open #'+ticketId+' →</a>';
+    show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
+    spin.style.display='none';
   })
   .catch(function(e){
-    $('e8').textContent='Connection error: '+e.message;show($('e8'),true);
-    btn.disabled=false;lbl.textContent='🔗 Create HubSpot Ticket';spin.style.display='none';
+    $('e8').textContent='Error: '+e.message;show($('e8'),true);
+    btn.disabled=false;lbl.textContent='Create Ticket + Send Email';spin.style.display='none';
   });
 });
 

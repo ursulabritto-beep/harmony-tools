@@ -667,16 +667,134 @@ $('btn-hs').addEventListener('click', function(){
       var perrs = (r.data.photo_errors||[]).join(' | ');
       msg += '<br><small style="color:#c0392b">✗ Photo failed: '+perrs+'</small>';
     }
-    msg += '<br><small style="color:#555">📄 Download PDF to attach to HubSpot note</small>';
+    msg += '<br><small style="color:#888">📄 Generating and attaching PDF...</small>';
     $('ok8').innerHTML = msg;
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
+
+    // Auto-generate PDF and upload to HubSpot
+    window._lastTicketId = ticketId;
+    setTimeout(function(){ autoGenerateAndUploadPDF(ticketId); }, 500);
   })
   .catch(function(e){
     $('e8').textContent='Error: '+e.message;show($('e8'),true);
     btn.disabled=false;lbl.textContent='Create Ticket + Send Email';spin.style.display='none';
   });
 });
+
+function autoGenerateAndUploadPDF(ticketId) {
+  if(!window.jspdf){ 
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=function(){ buildAndUploadPDF(ticketId); };
+    s.onerror=function(){ appendOk('<br><small style="color:#c0392b">✗ PDF library failed to load</small>'); };
+    document.head.appendChild(s);
+  } else {
+    buildAndUploadPDF(ticketId);
+  }
+}
+
+function appendOk(html){
+  var el=$('ok8');
+  if(el) el.innerHTML += html;
+}
+
+function buildAndUploadPDF(ticketId) {
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
+    var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
+    function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
+    var MONO_B64 = document.querySelector('.logo-bar img').src.split(',')[1];
+    var mb=atob(MONO_B64); var ma=new Uint8Array(mb.length);
+    for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);
+    doc.addImage(ma,'PNG',M,Y,38,38);
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+    doc.text('Harmony Luxury Furniture',M+50,Y+14);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
+    doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M+50,Y+27);
+    Y+=46;
+    doc.setDrawColor(26,26,26);doc.setLineWidth(1.2);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+    doc.text('MANUFACTURING DEFECT CLAIM',M+PW/2,Y+13,{align:'center'});Y+=20;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(136,136,136);
+    doc.text(D.claimNum+'   ·   '+date+'   ·   '+D.type+' Claim',M+PW/2,Y+11,{align:'center'});Y+=20;
+    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
+    var productFull2=D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'');
+    var qtyStr2=D.qty+' piece'+(parseInt(D.qty)>1?'s':'');
+    function infoLine2(lbl,v){chk(16);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);doc.text(lbl,M,Y+9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);var ls=doc.splitTextToSize(String(v||'-'),PW-95);doc.text(ls,M+95,Y+9);Y+=Math.max(15,ls.length*12)+1;}
+    infoLine2('HSM / PO:',D.po);
+    infoLine2('Product:',productFull2);
+    infoLine2('Defective Qty:',qtyStr2);
+    infoLine2('Supplier:',D.supplier);
+    Y+=4;doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+    doc.text('Defect Description',M,Y+10);Y+=18;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+    var dl=doc.splitTextToSize(D.defect,PW);chk(dl.length*13+10);doc.text(dl,M,Y+10);Y+=dl.length*13+14;
+    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+    doc.text('Resolution',M,Y+10);Y+=18;
+    function resBox2(t,v,det){chk(40);doc.setFillColor(247,247,247);doc.roundedRect(M,Y,PW,det?34:22,3,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(t,M+10,Y+10);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,26,26);doc.text(v,M+10,Y+22);if(det){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(85,85,85);doc.text(det,M+10,Y+33);Y+=42;}else Y+=30;}
+    resBox2('EXTERNAL — Require from supplier:',D.ext_res,D.ext_det||null);Y+=6;
+    var photos2=D.media.filter(function(m){return !m.isVid;});
+    if(photos2.length>0){
+      chk(30);doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Defect Photos ('+photos2.length+')',M,Y+10);Y+=18;
+      var pw2=(PW-10)/2,ph2=pw2*0.65,col2=0;
+      photos2.forEach(function(p){chk(ph2+10);var x=col2===0?M:M+pw2+10;try{doc.addImage(p.data,'JPEG',x,Y,pw2,ph2);}catch(e){try{doc.addImage(p.data,'PNG',x,Y,pw2,ph2);}catch(e2){}}col2++;if(col2>=2){col2=0;Y+=ph2+8;}});
+      if(col2===1)Y+=ph2+8;
+      // Photo links
+      var linkedPhotos=photos2.filter(function(p){return p.hsUrl;});
+      if(linkedPhotos.length>0){
+        chk(20);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text('Photo Links:',M,Y+10);Y+=16;
+        linkedPhotos.forEach(function(p,i){
+          chk(14);
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(26,86,179);
+          doc.textWithLink((i+1)+'. '+p.name,M,Y+9,{url:p.hsUrl});
+          doc.setTextColor(26,26,26);Y+=13;
+        });
+      }
+    }
+    chk(70);Y+=6;
+    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
+    var sw2=(PW-24)/2;
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);
+    doc.text('Reported by',M,Y+10);doc.text('Reviewed by',M+sw2+24,Y+10);Y+=40;
+    doc.setDrawColor(26,26,26);doc.setLineWidth(0.8);
+    doc.line(M,Y,M+sw2-6,Y);doc.line(M+sw2+24,Y,M+PW,Y);Y+=4;
+    doc.setFont('helvetica','oblique');doc.setFontSize(7.5);doc.setTextColor(136,136,136);
+    doc.text('Name & Signature',M,Y+8);doc.text('Name & Signature',M+sw2+24,Y+8);
+
+    // Upload PDF to HubSpot
+    var pdfFilename='Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
+    var pdfB64 = doc.output('datauristring');
+    var WORKER='https://harmony-hubspot.ursula-britto.workers.dev';
+    fetch(WORKER,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'upload_pdf',ticket_id:ticketId,pdf_data:pdfB64,filename:pdfFilename})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){
+        appendOk('<br><small>✓ PDF attached to HubSpot</small>');
+        // Also trigger download
+        doc.save(pdfFilename);
+      } else {
+        appendOk('<br><small style="color:#c0392b">✗ PDF attach failed: '+d.error+'</small>');
+        doc.save(pdfFilename);
+      }
+    }).catch(function(e){
+      appendOk('<br><small style="color:#c0392b">✗ PDF error: '+e.message+'</small>');
+      doc.save(pdfFilename);
+    });
+  } catch(e) {
+    appendOk('<br><small style="color:#c0392b">✗ PDF build error: '+e.message+'</small>');
+  }
+}
 
 setStep(1);
 })();

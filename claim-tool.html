@@ -565,6 +565,13 @@ $('btn-hs').addEventListener('click', function(){
     'Media: '+D.media.filter(function(m){return !m.isVid;}).length+' photo(s), '+D.media.filter(function(m){return m.isVid;}).length+' video(s)',
   ].join('\n');
 
+  var supplierMap = {
+    'Century':'century','Woods':'harmony_brazil','Arbosso':'Arbosso',
+    'Tumar':'tumar','Star':'star','Rugs - Raheem':'rugs',
+    'Sofinatti':'Sofinatti','Artimage':'Art Image','Quaker':'Quaker',
+    'Piu Mobili':'Piu Mobili','Anceski':'anceski'
+  };
+  var supplierVal = supplierMap[D.supplier] || D.supplier;
   var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
   var ticketId = null;
 
@@ -580,22 +587,7 @@ $('btn-hs').addEventListener('click', function(){
         hs_ticket_priority: D.type==='External'?'HIGH':'MEDIUM',
         hs_pipeline: D.type==='External'?'0':'136340495',
         hs_pipeline_stage: D.type==='External'?'1':'235011235',
-        supplier: (function(){
-          var map = {
-            'Century': 'century',
-            'Woods': 'harmony_brazil',
-            'Arbosso': 'Arbosso',
-            'Tumar': 'tumar',
-            'Star': 'star',
-            'Rugs - Raheem': 'rugs',
-            'Sofinatti': 'Sofinatti',
-            'Artimage': 'Art Image',
-            'Quaker': 'Quaker',
-            'Piu Mobili': 'Piu Mobili',
-            'Anceski': 'anceski',
-          };
-          return map[D.supplier] || D.supplier;
-        })(),
+        supplier: supplierVal,
         hubspot_owner_id: '77262383',
       }
     })

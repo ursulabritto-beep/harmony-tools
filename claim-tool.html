@@ -603,12 +603,21 @@ $('btn-hs').addEventListener('click', function(){
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
 
-    // Step 2: Create summary note (fire and forget)
+    // Step 2: Create summary note
     fetch(WORKER, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'create_note', ticket_id:ticketId, note:noteBody})
-    }).catch(function(e){console.warn('Note error:',e.message);});
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){
+        $('ok8').innerHTML += '<br><small>✓ Note created</small>';
+      } else {
+        $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Note failed: '+JSON.stringify(d)+'</small>';
+      }
+    }).catch(function(e){
+      $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Note error: '+e.message+'</small>';
+    });
 
     // Step 3: Upload photos one by one with stagger
     var photos = D.media.filter(function(m){return !m.isVid;});
@@ -624,10 +633,19 @@ $('btn-hs').addEventListener('click', function(){
               photo:{name:p.name, data:p.data, type:p.type||'image/jpeg'}
             })
           }).then(function(r){return r.json();})
-            .then(function(d){console.log('Photo '+p.name+':', d.success?'OK':'FAIL', d.error||'');})
-            .catch(function(e){console.warn('Photo error:',e.message);});
-        }, i * 3000); // stagger 3s apart
+          .then(function(d){
+            if(d.success){
+              $('ok8').innerHTML += '<br><small>✓ Photo uploaded: '+p.name+'</small>';
+            } else {
+              $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Photo failed: '+JSON.stringify(d)+'</small>';
+            }
+          }).catch(function(e){
+            $('ok8').innerHTML += '<br><small style="color:#c0392b">✗ Photo error: '+e.message+'</small>';
+          });
+        }, i * 3000);
       });
+    } else {
+      $('ok8').innerHTML += '<br><small style="color:#888">No photos to upload</small>';
     }
   })
   .catch(function(e){

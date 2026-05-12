@@ -137,6 +137,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="q">Defect Description + Photos</div>
     <div class="qsub">Describe the issue clearly. At least one photo is required.</div>
     <div class="field" style="margin-top:1rem"><textarea id="f-def" placeholder="e.g. Visible stitching gap on the right armrest, approx 4cm. Fabric puckering near the seam."></textarea></div>
+    <div class="field"><label>Quantity of defective pieces *</label><input id="f-qty" type="number" min="1" placeholder="e.g. 2" style="max-width:160px"></div>
     <div class="photo-zone" id="photo-zone">
       <input type="file" id="photo-input" accept="image/*,video/*" multiple>
       <div class="pico">📷</div>
@@ -216,7 +217,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ── State ─────────────────────────────────────────────────────────────────
 var D = {
   type:'', po:'', product:'', size:'', finish:'',
-  supplier:'', defect:'', media:[],
+  supplier:'', defect:'', qty:'', media:[],
   ext_res:'', ext_det:'', int_res:'', int_det:'',
   claimNum:''
 };
@@ -358,8 +359,11 @@ $('b5').addEventListener('click', function(){ go(4); });
 $('n5').addEventListener('click', function(){
   err(5,'');
   D.defect = val('f-def');
+  D.qty = val('f-qty');
   var hasPhoto = D.media.some(function(m){return !m.isVid;});
-  if(!D.defect || !hasPhoto){ err(5,'Please describe the defect and add at least one photo.'); return; }
+  if(!D.defect){ err(5,'Please describe the defect.'); return; }
+  if(!D.qty || parseInt(D.qty)<1){ err(5,'Please enter the quantity of defective pieces.'); return; }
+  if(!hasPhoto){ err(5,'At least one photo is required.'); return; }
   go(6);
 });
 $('b6').addEventListener('click', function(){ go(5); });
@@ -393,6 +397,7 @@ function buildSummary(){
     ['HSM / PO', D.po],
     ['Product', D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'')],
     ['Supplier', D.supplier],
+    ['Defective Qty', D.qty+' piece'+(parseInt(D.qty)>1?'s':'')],
     ['Defect', D.defect],
     ['External Resolution', D.ext_res+(D.ext_det?' — '+D.ext_det:'')],
     ['Internal Resolution', D.int_res+(D.int_det?' — '+D.int_det:'')],
@@ -442,6 +447,7 @@ $('btn-pdf').addEventListener('click', function(){
       }
       infoLine('HSM / PO:',D.po);
       infoLine('Product:',D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:''));
+      infoLine('Defective Qty:',D.qty+' piece'+(parseInt(D.qty)>1?'s':''));
       infoLine('Supplier:',D.supplier);
       Y+=4;doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
 
@@ -514,8 +520,6 @@ $('btn-pdf').addEventListener('click', function(){
 
 // ── HubSpot ───────────────────────────────────────────────────────────────
 $('btn-hs').addEventListener('click', function(){
-  var _t=['pat-na1-','f4c7ba73','-e11e-42','d2-8333-','55e4d488','c589'];
-  var token=_t.join('');
   show($('e8'),false); show($('ok8'),false);
   var btn=$('btn-hs'),lbl=$('lbl-hs'),spin=$('spin-hs');
   btn.disabled=true;lbl.textContent='Creating...';spin.style.display='inline-block';
@@ -525,15 +529,16 @@ $('btn-hs').addEventListener('click', function(){
     'CLAIM: '+D.claimNum,'Date: '+date,'Type: '+D.type+' Claim','',
     'HSM / PO: '+D.po,
     'Product: '+D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:''),
+    'Defective Qty: '+D.qty+' piece'+(parseInt(D.qty)>1?'s':''),
     'Supplier: '+D.supplier,'',
     'DEFECT:',D.defect,'',
     'External Resolution: '+D.ext_res+(D.ext_det?' — '+D.ext_det:''),
     'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),
   ].join('\n');
 
-  fetch('https://api.hubapi.com/crm/v3/objects/tickets',{
+  fetch('https://harmony-hubspot.ursula-britto.workers.dev',{
     method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({properties:{
       subject:'['+D.type.toUpperCase()+'] '+D.claimNum+' · '+D.product+' · '+D.supplier,
       content:body,

@@ -610,7 +610,7 @@ $('btn-hs').addEventListener('click', function(){
       body:JSON.stringify({action:'create_note', ticket_id:ticketId, note:noteBody})
     }).catch(function(e){console.warn('Note error:',e.message);});
 
-    // Step 3: Upload photos one by one
+    // Step 3: Upload photos one by one with stagger
     var photos = D.media.filter(function(m){return !m.isVid;});
     if(photos.length > 0){
       photos.forEach(function(p, i){
@@ -619,12 +619,14 @@ $('btn-hs').addEventListener('click', function(){
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
-              action:'upload_photos',
+              action:'upload_photo',
               ticket_id:ticketId,
-              photos:[{name:p.name, data:p.data, type:p.type||'image/jpeg'}]
+              photo:{name:p.name, data:p.data, type:p.type||'image/jpeg'}
             })
-          }).catch(function(e){console.warn('Photo error:',e.message);});
-        }, i * 2000); // stagger uploads 2s apart to avoid timeouts
+          }).then(function(r){return r.json();})
+            .then(function(d){console.log('Photo '+p.name+':', d.success?'OK':'FAIL', d.error||'');})
+            .catch(function(e){console.warn('Photo error:',e.message);});
+        }, i * 3000); // stagger 3s apart
       });
     }
   })

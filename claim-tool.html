@@ -511,16 +511,7 @@ $('btn-pdf').addEventListener('click', function(){
         Y+=4;
       }
 
-      // Signatures
-      chk(70);Y+=6;
-      doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
-      var sw=(PW-24)/2;
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);
-      doc.text('Reported by',M,Y+10);doc.text('Reviewed by',M+sw+24,Y+10);Y+=44;
-      doc.setDrawColor(26,26,26);doc.setLineWidth(0.8);
-      doc.line(M,Y,M+sw-6,Y);doc.line(M+sw+24,Y,M+PW,Y);Y+=4;
-      doc.setFont('helvetica','oblique');doc.setFontSize(7.5);doc.setTextColor(136,136,136);
-      doc.text('Name & Signature',M,Y+8);doc.text('Name & Signature',M+sw+24,Y+8);
+      // Signatures removed
 
       var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
       doc.save(pdfFilename);
@@ -683,14 +674,26 @@ $('btn-hs').addEventListener('click', function(){
 });
 
 function autoGenerateAndUploadPDF(ticketId) {
-  if(!window.jspdf){ 
+  if(window.jspdf){
+    buildAndUploadPDF(ticketId);
+    return;
+  }
+  // Not loaded yet - load and wait
+  var existing = document.querySelector('script[src*="jspdf"]');
+  if(existing){
+    // Script tag exists but not loaded yet - poll
+    var tries = 0;
+    var poll = setInterval(function(){
+      tries++;
+      if(window.jspdf){ clearInterval(poll); buildAndUploadPDF(ticketId); }
+      else if(tries > 20){ clearInterval(poll); appendOk('<br><small style="color:#c0392b">✗ PDF timeout</small>'); }
+    }, 500);
+  } else {
     var s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     s.onload=function(){ buildAndUploadPDF(ticketId); };
     s.onerror=function(){ appendOk('<br><small style="color:#c0392b">✗ PDF library failed to load</small>'); };
     document.head.appendChild(s);
-  } else {
-    buildAndUploadPDF(ticketId);
   }
 }
 
@@ -759,15 +762,7 @@ function buildAndUploadPDF(ticketId) {
         });
       }
     }
-    chk(70);Y+=6;
-    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
-    var sw2=(PW-24)/2;
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);
-    doc.text('Reported by',M,Y+10);doc.text('Reviewed by',M+sw2+24,Y+10);Y+=40;
-    doc.setDrawColor(26,26,26);doc.setLineWidth(0.8);
-    doc.line(M,Y,M+sw2-6,Y);doc.line(M+sw2+24,Y,M+PW,Y);Y+=4;
-    doc.setFont('helvetica','oblique');doc.setFontSize(7.5);doc.setTextColor(136,136,136);
-    doc.text('Name & Signature',M,Y+8);doc.text('Name & Signature',M+sw2+24,Y+8);
+    // Signatures removed
 
     // Upload PDF to HubSpot
     var pdfFilename='Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
@@ -797,6 +792,16 @@ function buildAndUploadPDF(ticketId) {
 }
 
 setStep(1);
+
+// Preload jsPDF in background so it's ready when needed
+setTimeout(function(){
+  if(!window.jspdf){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    document.head.appendChild(s);
+  }
+}, 2000);
+
 })();
 </script>
 </body>

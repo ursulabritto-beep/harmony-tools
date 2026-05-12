@@ -58,7 +58,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .choice-card{
   border:1.5px solid var(--border);border-radius:var(--radius-sm);
   padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;
-  background:#fff;position:relative
+  background:#fff;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0.1);
+  user-select:none;-webkit-user-select:none;touch-action:manipulation
 }
 .choice-card:hover{border-color:var(--accent);background:var(--accent-light)}
 .choice-card.selected{border-color:var(--dark);background:var(--dark);color:#fff}
@@ -131,12 +132,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="question">What type of claim is this?</div>
     <div class="question-sub"><strong>Internal</strong> — client does not know about the issue. <strong>External</strong> — client is aware and the case is urgent.</div>
     <div class="choice-grid" style="grid-template-columns:1fr 1fr;margin-top:1rem">
-      <div class="choice-card" onclick="selectChoice('type','Internal',this)">
+      <div class="choice-card" data-field="type" data-value="Internal">
         <div class="icon">🔒</div>
         <div class="label">Internal</div>
         <div class="sub">Client unaware</div>
       </div>
-      <div class="choice-card" onclick="selectChoice('type','External',this)">
+      <div class="choice-card" data-field="type" data-value="External">
         <div class="icon">⚠️</div>
         <div class="label">External</div>
         <div class="sub">Client aware · Urgent</div>
@@ -245,10 +246,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="question">External Resolution</div>
     <div class="question-sub">What will we require from the supplier?</div>
     <div class="choice-grid" style="grid-template-columns:1fr 1fr;margin-top:.75rem">
-      <div class="choice-card" onclick="selectChoice('ext_res','Replacement',this)"><div class="icon">🔄</div><div class="label">Replacement</div></div>
-      <div class="choice-card" onclick="selectChoice('ext_res','Credit Note',this)"><div class="icon">💳</div><div class="label">Credit Note</div></div>
-      <div class="choice-card" onclick="selectChoice('ext_res','Repair',this)"><div class="icon">🔧</div><div class="label">Repair</div></div>
-      <div class="choice-card" onclick="selectChoice('ext_res','Refund',this)"><div class="icon">💰</div><div class="label">Refund</div></div>
+      <div class="choice-card" data-field="ext_res" data-value="Replacement"><div class="icon">🔄</div><div class="label">Replacement</div></div>
+      <div class="choice-card" data-field="ext_res" data-value="Credit Note"><div class="icon">💳</div><div class="label">Credit Note</div></div>
+      <div class="choice-card" data-field="ext_res" data-value="Repair"><div class="icon">🔧</div><div class="label">Repair</div></div>
+      <div class="choice-card" data-field="ext_res" data-value="Refund"><div class="icon">💰</div><div class="label">Refund</div></div>
     </div>
     <div class="field">
       <label>Additional details (optional)</label>
@@ -267,10 +268,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="question">Internal Resolution</div>
     <div class="question-sub">What will we do with the product internally?</div>
     <div class="choice-grid" style="grid-template-columns:1fr 1fr;margin-top:.75rem">
-      <div class="choice-card" onclick="selectChoice('int_res','Hold in Warehouse',this)"><div class="icon">📦</div><div class="label">Hold</div><div class="sub">Keep in warehouse</div></div>
-      <div class="choice-card" onclick="selectChoice('int_res','Deliver As-Is',this)"><div class="icon">🚚</div><div class="label">Deliver As-Is</div><div class="sub">With client notice</div></div>
-      <div class="choice-card" onclick="selectChoice('int_res','Repair Internally',this)"><div class="icon">🔨</div><div class="label">Repair</div><div class="sub">Internal team</div></div>
-      <div class="choice-card" onclick="selectChoice('int_res','Return to Supplier',this)"><div class="icon">↩️</div><div class="label">Return</div><div class="sub">Send back</div></div>
+      <div class="choice-card" data-field="int_res" data-value="Hold in Warehouse"><div class="icon">📦</div><div class="label">Hold</div><div class="sub">Keep in warehouse</div></div>
+      <div class="choice-card" data-field="int_res" data-value="Deliver As-Is"><div class="icon">🚚</div><div class="label">Deliver As-Is</div><div class="sub">With client notice</div></div>
+      <div class="choice-card" data-field="int_res" data-value="Repair Internally"><div class="icon">🔨</div><div class="label">Repair</div><div class="sub">Internal team</div></div>
+      <div class="choice-card" data-field="int_res" data-value="Return to Supplier"><div class="icon">↩️</div><div class="label">Return</div><div class="sub">Send back</div></div>
     </div>
     <div class="field">
       <label>Additional notes (optional)</label>
@@ -366,6 +367,22 @@ function selectChoice(field, value, el) {
   var grid = el.parentElement;
   grid.querySelectorAll('.choice-card').forEach(function(c){c.classList.remove('selected');});
   el.classList.add('selected');
+}
+
+function initChoiceCards() {
+  document.querySelectorAll('.choice-card').forEach(function(card) {
+    card.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      var field = card.getAttribute('data-field');
+      var value = card.getAttribute('data-value');
+      selectChoice(field, value, card);
+    });
+    card.addEventListener('click', function(e) {
+      var field = card.getAttribute('data-field');
+      var value = card.getAttribute('data-value');
+      selectChoice(field, value, card);
+    });
+  });
 }
 
 function handleMedia(e) {
@@ -649,6 +666,7 @@ function buildAndSavePDF() {
 
 // Init
 showStep(1);
+initChoiceCards();
 
 
 // ── HubSpot ───────────────────────────────────────────────────────────────

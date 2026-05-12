@@ -596,40 +596,37 @@ $('btn-hs').addEventListener('click', function(){
   .then(function(r){
     if(!r.ok) throw new Error(r.data.message||JSON.stringify(r.data));
     ticketId = r.data.id;
-
-    // Step 2: Create note with full details + photo count
-    return fetch(WORKER, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        action: 'create_note',
-        ticket_id: ticketId,
-        note: noteBody,
-      })
-    });
-  })
-  .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
-  .then(function(r){
-    if(!r.ok) console.warn('Note failed:', r.data);
-
-    // Step 3: Upload photos as note attachments if any
-    var photos = D.media.filter(function(m){return !m.isVid;});
-    if(photos.length === 0) return Promise.resolve();
-    return fetch(WORKER, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        action: 'upload_photos',
-        ticket_id: ticketId,
-        photos: photos.map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};})
-      })
-    });
-  })
-  .then(function(){
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
-    $('ok8').innerHTML='✓ Ticket created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open #'+ticketId+' →</a>';
+
+    // Show success immediately
+    $('ok8').innerHTML='✓ Ticket #'+ticketId+' created! <a href="'+url+'" target="_blank" style="color:#1E7E3E;font-weight:700">Open →</a>';
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
+
+    // Step 2: Create summary note (fire and forget)
+    fetch(WORKER, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'create_note', ticket_id:ticketId, note:noteBody})
+    }).catch(function(e){console.warn('Note error:',e.message);});
+
+    // Step 3: Upload photos one by one
+    var photos = D.media.filter(function(m){return !m.isVid;});
+    if(photos.length > 0){
+      photos.forEach(function(p, i){
+        setTimeout(function(){
+          fetch(WORKER, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              action:'upload_photos',
+              ticket_id:ticketId,
+              photos:[{name:p.name, data:p.data, type:p.type||'image/jpeg'}]
+            })
+          }).catch(function(e){console.warn('Photo error:',e.message);});
+        }, i * 2000); // stagger uploads 2s apart to avoid timeouts
+      });
+    }
   })
   .catch(function(e){
     $('e8').textContent='Error: '+e.message;show($('e8'),true);

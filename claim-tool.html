@@ -411,8 +411,8 @@ function buildSummary(){
   }).join('');
 }
 
-// ── PDF builder (shared logic) ────────────────────────────────────────────
-function buildPDF(jsPDF, D, MONO_B64) {
+// ── PDF builder (shared logic) — exposed globally ─────────────────────────
+window.buildPDF = function buildPDF(jsPDF, D, MONO_B64) {
   var doc = new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
   var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
   var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
@@ -535,7 +535,7 @@ function buildPDF(jsPDF, D, MONO_B64) {
   }
 
   return doc;
-}
+};
 
 // ── PDF button (download only) ────────────────────────────────────────────
 $('btn-pdf').addEventListener('click', function(){
@@ -545,7 +545,7 @@ $('btn-pdf').addEventListener('click', function(){
 
   function run(jsPDF){
     try{
-      var doc = buildPDF(jsPDF, D, MONO);
+      var doc = window.buildPDF(jsPDF, D, MONO);
       var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
       doc.save(pdfFilename);
 
@@ -728,7 +728,7 @@ function buildAndUploadPDF(ticketId) {
     var D = window.CLAIM_STATE;
     var MONO_B64 = window.GLOBAL_MONO_B64;
     var jsPDF = window.jspdf.jsPDF;
-    var doc = buildPDF(jsPDF, D, MONO_B64);
+    var doc = window.buildPDF(jsPDF, D, MONO_B64);
     var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
 
     // Save locally

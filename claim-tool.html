@@ -419,16 +419,11 @@ window.buildPDF = function buildPDF(jsPDF, D, MONO_B64) {
 
   function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
 
-  // Header
-  try {
-    var mb=atob(MONO_B64), ma=new Uint8Array(mb.length);
-    for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);
-    doc.addImage(ma,'PNG',M,Y,38,38);
-  } catch(imgErr) { /* skip logo if decode fails */ }
-  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
-  doc.text('Harmony Luxury Furniture',M+50,Y+14);
+  // Header — text only (no logo image to avoid atob errors)
+  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(26,26,26);
+  doc.text('Harmony Luxury Furniture',M,Y+18);
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
-  doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M+50,Y+27);
+  doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M,Y+31);
   Y+=46;
   doc.setDrawColor(26,26,26);doc.setLineWidth(1.2);doc.line(M,Y,M+PW,Y);Y+=8;
 

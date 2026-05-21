@@ -664,7 +664,9 @@ $('btn-hs').addEventListener('click', function(){
         hubspot_owner_id: '77262383',
       },
       note: noteBody,
-      photos: D.media.map(function(p){return {name:p.name, data:p.data, type:p.type||(p.isVid?'video/mp4':'image/jpeg'), isVid:p.isVid||false};})
+      // Strip video data (too large for worker) - send names only
+      photos: D.media.filter(function(p){return !p.isVid;}).map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg', isVid:false};}),
+      video_names: D.media.filter(function(p){return p.isVid;}).map(function(p){return p.name;})
     })
   })
   .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})

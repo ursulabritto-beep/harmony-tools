@@ -521,22 +521,29 @@ $('btn-pdf').addEventListener('click', function(){
         Y+=4;
       }
 
-      // Videos section in PDF
+      // Videos section in PDF — clickable links if uploaded
     var videos2=D.media.filter(function(m){return m.isVid;});
     if(videos2.length>0){
       chk(30);
+      doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
       doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
-      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=18;
       videos2.forEach(function(v,i){
-        chk(14);
+        chk(30);
         doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
-        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+        doc.text((i+1)+'. '+v.name,M,Y+9);
+        if(v.hsUrl){
+          doc.setFontSize(8);doc.setTextColor(26,86,179);
+          doc.textWithLink(v.hsUrl,M,Y+20,{url:v.hsUrl});
+          doc.setTextColor(26,26,26);Y+=30;
+        } else {
+          doc.setFontSize(8);doc.setTextColor(136,136,136);
+          doc.text('(no link available)',M,Y+20);
+          doc.setTextColor(26,26,26);Y+=30;
+        }
       });
       Y+=4;
     }
-    // Signatures removed
 
       var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
       doc.save(pdfFilename);
@@ -648,56 +655,6 @@ $('btn-hs').addEventListener('click', function(){
     photoSection = '\n\nPHOTOS ATTACHED: '+photos.length+' image'+(photos.length>1?'s':'')+' (see note in HubSpot)';
   }
 
-  // Upload videos directly from browser to HubSpot (bypass worker size limit)
-  var TOKEN_PARTS = ['pat','-na1','-f4c7','ba73','-e11e','-42d2','-8333','-55e4','d488c','589'];
-  var HS_TOKEN = TOKEN_PARTS.join('');
-  var HS_FILES = 'https://api.hubapi.com/files/v3/files';
-  
-  var videoMedia = D.media.filter(function(m){ return m.isVid; });
-  var videoUploadPromises = videoMedia.map(function(v) {
-    return new Promise(function(resolve) {
-      try {
-        var raw = v.data.includes(',') ? v.data.split(',')[1] : v.data;
-        var binary = atob(raw);
-        var bytes = new Uint8Array(binary.length);
-        for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-        var mime = v.type || 'video/mp4';
-        var ext = mime.includes('mp4')?'.mp4':mime.includes('mov')?'.mov':mime.includes('webm')?'.webm':'.mp4';
-        var fname = v.name.includes('.') ? v.name : v.name+ext;
-        var form = new FormData();
-        form.append('file', new Blob([bytes],{type:mime}), fname);
-        form.append('folderPath','/claim-videos');
-        form.append('options', JSON.stringify({access:'PUBLIC_INDEXABLE',overwrite:false,duplicateValidationStrategy:'NONE'}));
-        fetch(HS_FILES, {
-          method:'POST',
-          headers:{'Authorization':'Bearer '+HS_TOKEN},
-          body:form
-        }).then(function(r){return r.json();})
-        .then(function(d){
-          if(d.id && d.url){ resolve({name:fname, url:d.url, success:true}); }
-          else { resolve({name:fname, url:null, success:false, error:d.message||'failed'}); }
-        }).catch(function(e){ resolve({name:fname, url:null, success:false, error:e.message}); });
-      } catch(e) { resolve({name:v.name, url:null, success:false, error:e.message}); }
-    });
-  });
-
-  Promise.all(videoUploadPromises).then(function(videoResults) {
-    // Add video links to noteBody
-    var uploadedVideos = videoResults.filter(function(v){ return v.success && v.url; });
-    var failedVideos = videoResults.filter(function(v){ return !v.success; });
-    if(uploadedVideos.length > 0) {
-      noteBody += '\n\n--- DEFECT VIDEOS ---';
-      uploadedVideos.forEach(function(v,i){ noteBody += '\n'+(i+1)+'. '+v.name+': '+v.url; });
-    }
-    if(failedVideos.length > 0) {
-      noteBody += '\n\n--- VIDEOS (upload failed, share manually) ---';
-      failedVideos.forEach(function(v,i){ noteBody += '\n'+(i+1)+'. '+v.name+(v.error?' ('+v.error+')':''); });
-    }
-    // Store video URLs on D.media for PDF
-    uploadedVideos.forEach(function(uv){
-      D.media.forEach(function(m){ if(m.isVid && m.name===uv.name) m.hsUrl=uv.url; });
-    });
-
   // Single API call — everything in one shot
   fetch(WORKER, {
     method:'POST',
@@ -714,9 +671,8 @@ $('btn-hs').addEventListener('click', function(){
         hubspot_owner_id: '77262383',
       },
       note: noteBody,
-      // Strip video data (too large for worker) - send names only
-      photos: D.media.filter(function(p){return !p.isVid;}).map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg', isVid:false};}),
-      video_names: D.media.filter(function(p){return p.isVid;}).map(function(p){return p.name;})
+      photos: D.media.filter(function(p){return !p.isVid;}).map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};}),
+      videos: D.media.filter(function(p){return p.isVid;}).map(function(p){return {name:p.name, data:p.data, type:p.type||'video/mp4'};})
     })
   })
   .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
@@ -727,11 +683,18 @@ $('btn-hs').addEventListener('click', function(){
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
     // Store uploaded URLs back into media array for PDF (photos and videos)
     if(r.data.photo_urls && r.data.photo_urls.length > 0){
-      var uploadedUrls = r.data.photo_urls;
-      // Match by name since order may differ
-      D.media.forEach(function(m){
-        uploadedUrls.forEach(function(u){
-          if(u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
+      r.data.photo_urls.forEach(function(u){
+        D.media.forEach(function(m){
+          if(!m.isVid && u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
+            m.hsUrl = u.url;
+          }
+        });
+      });
+    }
+    if(r.data.video_urls && r.data.video_urls.length > 0){
+      r.data.video_urls.forEach(function(u){
+        D.media.forEach(function(m){
+          if(m.isVid && u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
             m.hsUrl = u.url;
           }
         });
@@ -742,10 +705,9 @@ $('btn-hs').addEventListener('click', function(){
     if(r.data.note_id) msg += '<br><small>✓ Note created</small>';
     else msg += '<br><small style="color:#c0392b">✗ Note error: '+JSON.stringify(r.data.note_error)+'</small>';
     if(r.data.photos_uploaded > 0) msg += '<br><small>✓ '+r.data.photos_uploaded+' photo(s) uploaded</small>';
-    if(r.data.photos_failed > 0){
-      var perrs = (r.data.photo_errors||[]).join(' | ');
-      msg += '<br><small style="color:#c0392b">✗ Photo failed: '+perrs+'</small>';
-    }
+    if(r.data.photos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.photos_failed+' photo(s) failed</small>';
+    if(r.data.videos_uploaded > 0) msg += '<br><small>✓ '+r.data.videos_uploaded+' video(s) uploaded</small>';
+    if(r.data.videos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.videos_failed+' video(s) failed</small>';
     msg += '<br><small style="color:#888">📄 Generating and attaching PDF...</small>';
     $('ok8').innerHTML = msg;
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
@@ -775,7 +737,6 @@ $('btn-hs').addEventListener('click', function(){
     $('e8').textContent='Error: '+e.message;show($('e8'),true);
     btn.disabled=false;lbl.textContent='Create Ticket + Send Email';spin.style.display='none';
   });
-  }); // end Promise.all videoUploadPromises
 });
 
 setStep(1);
@@ -828,9 +789,7 @@ function buildAndUploadPDF(ticketId) {
     var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
     var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
     function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
-    var mb=atob(GLOBAL_MONO_B64); var ma=new Uint8Array(mb.length);
-    for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);
-    doc.addImage(ma,'PNG',M,Y,38,38);
+    try{var mb=atob(GLOBAL_MONO_B64);var ma=new Uint8Array(mb.length);for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);doc.addImage(ma,'PNG',M,Y,38,38);}catch(e){}
     doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
     doc.text('Harmony Luxury Furniture',M+50,Y+14);
     doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
@@ -880,22 +839,29 @@ function buildAndUploadPDF(ticketId) {
         });
       }
     }
-    // Videos section in PDF
+    // Videos section in PDF — clickable links if uploaded
     var videos2=D.media.filter(function(m){return m.isVid;});
     if(videos2.length>0){
       chk(30);
+      doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
       doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
-      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=18;
       videos2.forEach(function(v,i){
-        chk(14);
+        chk(30);
         doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
-        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+        doc.text((i+1)+'. '+v.name,M,Y+9);
+        if(v.hsUrl){
+          doc.setFontSize(8);doc.setTextColor(26,86,179);
+          doc.textWithLink(v.hsUrl,M,Y+20,{url:v.hsUrl});
+          doc.setTextColor(26,26,26);Y+=30;
+        } else {
+          doc.setFontSize(8);doc.setTextColor(136,136,136);
+          doc.text('(no link available)',M,Y+20);
+          doc.setTextColor(26,26,26);Y+=30;
+        }
       });
       Y+=4;
     }
-    // Signatures removed
 
     // Upload PDF to HubSpot
     var pdfFilename='Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';

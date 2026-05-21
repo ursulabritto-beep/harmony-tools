@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- HARMONY CLAIM TOOL v5 - 2026-05-21 (video links fix) -->
+<!-- HARMONY CLAIM TOOL v4 - 2026-05-12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -68,7 +68,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="wrap">
 
   <div class="hdr">
-    <img id="mono-img" alt="HLF">
+    <div id="mono-fallback" style="display:none;width:44px;height:44px;background:#8a7d70;border-radius:6px;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0">HLF</div><img id="mono-img" alt="HLF" onerror="this.style.display='none';document.getElementById('mono-fallback').style.display='flex'">
     <div>
       <h1>Harmony Luxury Furniture</h1>
       <p>Quality Control · Defect Claim</p>
@@ -155,11 +155,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="qlbl">Step 6</div>
     <div class="q">External Resolution</div>
     <div class="qsub">What will we require from the supplier?</div>
-    <div class="grid2" id="grid-ext" style="margin-top:1rem">
+    <div class="grid2" id="grid-ext" style="margin-top:1rem;grid-template-columns:1fr 1fr 1fr">
       <div class="card" data-val="Replacement"><div class="ico">🔄</div><div class="lbl">Replacement</div></div>
-      <div class="card" data-val="Credit Note"><div class="ico">💳</div><div class="lbl">Credit Note</div></div>
-      <div class="card" data-val="Repair"><div class="ico">🔧</div><div class="lbl">Repair</div></div>
-      <div class="card" data-val="Refund"><div class="ico">💰</div><div class="lbl">Refund</div></div>
+      <div class="card" data-val="Credit Note/Refund do Produto"><div class="ico">💳</div><div class="lbl" style="font-size:11px">Credit Note/Refund do Produto</div></div>
+      <div class="card" data-val="Reparo Interno"><div class="ico">🔧</div><div class="lbl">Reparo Interno</div></div>
+      <div class="card" data-val="Refund do Reparo Externo"><div class="ico">💰</div><div class="lbl" style="font-size:11px">Refund do Reparo Externo</div></div>
+      <div class="card" data-val="Notificacao - Apenas Registro"><div class="ico">📋</div><div class="lbl" style="font-size:11px">Notificação</div><div class="sub">Apenas Registro</div></div>
+      <div class="card" data-val="Melhoria de Produto"><div class="ico">⭐</div><div class="lbl" style="font-size:11px">Melhoria de Produto</div></div>
     </div>
     <div class="field"><label>Additional details (optional)</label><textarea id="f-ext" placeholder="Specify timeline, partial credit, etc." style="min-height:60px"></textarea></div>
     <div class="err" id="e6">Please select an external resolution.</div>
@@ -171,11 +173,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="qlbl">Step 7</div>
     <div class="q">Internal Resolution</div>
     <div class="qsub">What will we do with the product internally?</div>
-    <div class="grid2" id="grid-int" style="margin-top:1rem">
+    <div class="grid2" id="grid-int" style="margin-top:1rem;grid-template-columns:1fr 1fr 1fr">
       <div class="card" data-val="Hold in Warehouse"><div class="ico">📦</div><div class="lbl">Hold</div><div class="sub">Keep in warehouse</div></div>
       <div class="card" data-val="Deliver As-Is"><div class="ico">🚚</div><div class="lbl">Deliver As-Is</div><div class="sub">With client notice</div></div>
-      <div class="card" data-val="Repair Internally"><div class="ico">🔨</div><div class="lbl">Repair</div><div class="sub">Internal team</div></div>
-      <div class="card" data-val="Return to Supplier"><div class="ico">↩️</div><div class="lbl">Return</div><div class="sub">Send back</div></div>
+      <div class="card" data-val="Reparo Interno"><div class="ico">🔨</div><div class="lbl">Reparo Interno</div><div class="sub">Internal team</div></div>
+      <div class="card" data-val="Reparo Externo"><div class="ico">🔧</div><div class="lbl">Reparo Externo</div><div class="sub">External team</div></div>
+      <div class="card" data-val="Descarte"><div class="ico">🗑️</div><div class="lbl">Descarte</div><div class="sub">Dispose</div></div>
     </div>
     <div class="field"><label>Additional notes (optional)</label><textarea id="f-int" placeholder="Responsible person, deadline, instructions..." style="min-height:60px"></textarea></div>
     <div class="err" id="e7">Please select an internal resolution.</div>
@@ -224,10 +227,10 @@ var D = {
 };
 
 // ── Monogram (embedded) ───────────────────────────────────────────────────
-var MONO = 'iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAuA0lEQVR4nO2d+5ccxZXnvxGRmZVV1a1GNHpiJNALCSRAQg+wDQNCIBn8wMZgW2B7Zn7Y4z27Z2fPzs5P+8v+PGf/hj074/FjwE9sIxtjMDYwICQBEg8JBEKIt5BaUndXVWZGRuwPkZGVVV1VmV2V1erqjs85ebqlrsqKyoyb944XeUUZCxbuEe7d21kU1IbbgHBEKjI3X3bpGPfuHLBJNNzZ0ACAC4DFa+FQ0WGPN1bMCBgI0gUcIZyqVKdaHnBXgFCYrVz5yxkYCmJqKECCGdCxAYCEAAABFDBIoG2gIEABBBBBJABGDDIGrJI5ycJJJCMGBhAAUFIBNJMGGDRhJ2QAEAACBBBBQAAAAAAA==';
+var MONO = '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';
 document.getElementById('mono-img').src = 'data:image/png;base64,' + MONO;
-window.GLOBAL_MONO_B64 = MONO;
-window.CLAIM_STATE = D;
+window.GLOBAL_MONO_B64 = MONO; // store for PDF use (window-level global)
+window.CLAIM_STATE = D; // expose state globally for buildAndUploadPDF
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function $(id){ return document.getElementById(id); }
@@ -411,130 +414,7 @@ function buildSummary(){
   }).join('');
 }
 
-// ── PDF builder (shared logic) — exposed globally ─────────────────────────
-window.buildPDF = function buildPDF(jsPDF, D, MONO_B64) {
-  var doc = new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
-  var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
-  var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
-
-  function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
-
-  // Header — text only (no logo image to avoid atob errors)
-  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(26,26,26);
-  doc.text('Harmony Luxury Furniture',M,Y+18);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
-  doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M,Y+31);
-  Y+=46;
-  doc.setDrawColor(26,26,26);doc.setLineWidth(1.2);doc.line(M,Y,M+PW,Y);Y+=8;
-
-  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
-  doc.text('MANUFACTURING DEFECT CLAIM',M+PW/2,Y+13,{align:'center'});Y+=20;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(136,136,136);
-  doc.text(D.claimNum+'   ·   '+date+'   ·   '+D.type+' Claim',M+PW/2,Y+11,{align:'center'});Y+=20;
-  doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
-
-  function infoLine(lbl,v){
-    chk(16);
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);doc.text(lbl,M,Y+9);
-    doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
-    var ls=doc.splitTextToSize(String(v||'-'),PW-95);doc.text(ls,M+95,Y+9);
-    Y+=Math.max(15,ls.length*12)+1;
-  }
-  var productFull=D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'');
-  var qtyStr=D.qty+' piece'+(parseInt(D.qty)>1?'s':'');
-  infoLine('HSM / PO:',D.po);
-  infoLine('Product:',productFull);
-  infoLine('Defective Qty:',qtyStr);
-  infoLine('Supplier:',D.supplier);
-  Y+=4;doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
-
-  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-  doc.text('Defect Description',M,Y+10);Y+=18;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
-  var dl=doc.splitTextToSize(D.defect,PW);chk(dl.length*13+10);
-  doc.text(dl,M,Y+10);Y+=dl.length*13+14;
-  doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
-
-  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-  doc.text('Resolution',M,Y+10);Y+=18;
-  function resBox(t,v,det){
-    chk(40);
-    doc.setFillColor(247,247,247);doc.roundedRect(M,Y,PW,det?34:22,3,3,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(t,M+10,Y+10);
-    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,26,26);doc.text(v,M+10,Y+22);
-    if(det){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(85,85,85);doc.text(det,M+10,Y+33);Y+=42;}
-    else Y+=30;
-  }
-  resBox('EXTERNAL — Require from supplier:',D.ext_res,D.ext_det||null);Y+=6;
-
-  // Photos (embedded images)
-  var photos=D.media.filter(function(m){return !m.isVid;});
-  if(photos.length>0){
-    chk(30);
-    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
-    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-    doc.text('Defect Photos ('+photos.length+')',M,Y+10);Y+=18;
-    var pw=(PW-10)/2, ph=pw*0.65, col=0;
-    photos.forEach(function(p){
-      chk(ph+10);
-      var x=col===0?M:M+pw+10;
-      try{doc.addImage(p.data,'JPEG',x,Y,pw,ph);}catch(e){try{doc.addImage(p.data,'PNG',x,Y,pw,ph);}catch(e2){}}
-      col++;if(col>=2){col=0;Y+=ph+8;}
-    });
-    if(col===1)Y+=ph+8;
-  }
-
-  // Photo links
-  if(photos.length>0){
-    chk(30);
-    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
-    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-    doc.text('Defect Photo Links',M,Y+10);Y+=18;
-    photos.forEach(function(p,i){
-      chk(28);
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
-      doc.text((i+1)+'. '+p.name,M,Y+9);
-      if(p.hsUrl){
-        doc.setFontSize(8);doc.setTextColor(26,86,179);
-        doc.textWithLink(p.hsUrl,M,Y+20,{url:p.hsUrl});
-        doc.setTextColor(26,26,26);Y+=28;
-      } else {
-        Y+=14;
-      }
-    });
-    Y+=4;
-  }
-
-  // ── VIDEO FILES — clickable links if uploaded, filename if not ────────────
-  var videos=D.media.filter(function(m){return m.isVid;});
-  if(videos.length>0){
-    chk(30);
-    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
-    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
-    doc.text('Video Files ('+videos.length+')',M,Y+10);Y+=18;
-    videos.forEach(function(v,i){
-      chk(30);
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
-      doc.text((i+1)+'. '+v.name,M,Y+9);
-      if(v.hsUrl){
-        // Clickable link
-        doc.setFontSize(8);doc.setTextColor(26,86,179);
-        doc.textWithLink(v.hsUrl,M,Y+20,{url:v.hsUrl});
-        doc.setTextColor(26,26,26);Y+=30;
-      } else {
-        // No URL yet — note it's uploading
-        doc.setFontSize(8);doc.setTextColor(136,136,136);
-        doc.text('(link will appear after ticket is created)',M,Y+20);
-        doc.setTextColor(26,26,26);Y+=30;
-      }
-    });
-    Y+=4;
-  }
-
-  return doc;
-};
-
-// ── PDF button (download only) ────────────────────────────────────────────
+// ── PDF ───────────────────────────────────────────────────────────────────
 $('btn-pdf').addEventListener('click', function(){
   var lbl=$('lbl-pdf'), spin=$('spin-pdf'), btn=$('btn-pdf');
   btn.disabled=true; lbl.textContent='Loading...'; spin.style.display='inline-block';
@@ -542,11 +422,126 @@ $('btn-pdf').addEventListener('click', function(){
 
   function run(jsPDF){
     try{
-      var doc = window.buildPDF(jsPDF, D, MONO);
+      var doc=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+      var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
+      var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
+      function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
+
+      // Header
+      var mb=atob(MONO),ma=new Uint8Array(mb.length);
+      for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);
+      doc.addImage(ma,'PNG',M,Y,38,38);
+      doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+      doc.text('Harmony Luxury Furniture',M+50,Y+14);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
+      doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M+50,Y+27);
+      Y+=46;
+      doc.setDrawColor(26,26,26);doc.setLineWidth(1.2);doc.line(M,Y,M+PW,Y);Y+=8;
+
+      doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+      doc.text('MANUFACTURING DEFECT CLAIM',M+PW/2,Y+13,{align:'center'});Y+=20;
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(136,136,136);
+      doc.text(D.claimNum+'   ·   '+date+'   ·   '+D.type+' Claim',M+PW/2,Y+11,{align:'center'});Y+=20;
+      doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
+
+      function infoLine(lbl,v){
+        chk(16);
+        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);doc.text(lbl,M,Y+9);
+        doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
+        var ls=doc.splitTextToSize(String(v||'-'),PW-95);doc.text(ls,M+95,Y+9);
+        Y+=Math.max(15,ls.length*12)+1;
+      }
+      infoLine('HSM / PO:',D.po);
+      infoLine('Product:',D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:''));
+      infoLine('Defective Qty:',D.qty+' piece'+(parseInt(D.qty)>1?'s':''));
+      infoLine('Supplier:',D.supplier);
+      Y+=4;doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Defect Description',M,Y+10);Y+=18;
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+      var dl=doc.splitTextToSize(D.defect,PW);chk(dl.length*13+10);
+      doc.text(dl,M,Y+10);Y+=dl.length*13+14;
+      doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Resolution',M,Y+10);Y+=18;
+      function resBox(t,v,det){
+        chk(40);
+        doc.setFillColor(247,247,247);doc.roundedRect(M,Y,PW,det?34:22,3,3,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(t,M+10,Y+10);
+        doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,26,26);doc.text(v,M+10,Y+22);
+        if(det){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(85,85,85);doc.text(det,M+10,Y+33);Y+=42;}
+        else Y+=30;
+      }
+      resBox('EXTERNAL — Require from supplier:',D.ext_res,D.ext_det||null);
+      Y+=6;
+
+      // Photos
+      var photos=D.media.filter(function(m){return !m.isVid;});
+      if(photos.length>0){
+        chk(30);
+        doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+        doc.text('Defect Photos ('+photos.length+')',M,Y+10);Y+=18;
+        var pw=(PW-10)/2, ph=pw*0.65, col=0;
+        photos.forEach(function(p){
+          chk(ph+10);
+          var x=col===0?M:M+pw+10;
+          try{doc.addImage(p.data,'JPEG',x,Y,pw,ph);}catch(e){try{doc.addImage(p.data,'PNG',x,Y,pw,ph);}catch(e2){}}
+          col++;if(col>=2){col=0;Y+=ph+8;}
+        });
+        if(col===1) Y+=ph+8;
+      }
+
+      // Photo & video links section
+      var allMedia = D.media.filter(function(m){ return m.hsUrl; });
+      if(allMedia.length > 0){
+        var photoLinked = allMedia.filter(function(m){ return !m.isVid; });
+        var videoLinked = allMedia.filter(function(m){ return m.isVid; });
+      }
+      if(photos.length > 0){
+        chk(30);
+        doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+        doc.text('Defect Photo Links',M,Y+10);Y+=18;
+        photos.forEach(function(p,i){
+          chk(16);
+          doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+          doc.text((i+1)+'. '+p.name,M,Y+9);
+          if(p.hsUrl){
+            doc.setTextColor(26,86,179);
+            doc.textWithLink(p.hsUrl, M, Y+20, {url: p.hsUrl});
+            doc.setTextColor(26,26,26);
+            Y+=28;
+          } else {
+            Y+=14;
+          }
+        });
+        Y+=4;
+      }
+
+      // Videos section in PDF
+    var videos2=D.media.filter(function(m){return m.isVid;});
+    if(videos2.length>0){
+      chk(30);
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
+      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      videos2.forEach(function(v,i){
+        chk(14);
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+      });
+      Y+=4;
+    }
+    // Signatures removed
+
       var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
       doc.save(pdfFilename);
 
-      // If ticket already created, upload PDF to HubSpot
+      // If ticket was already created, upload PDF to HubSpot
       var lastTicketId = window._lastTicketId;
       if(lastTicketId){
         var pdfB64 = doc.output('datauristring');
@@ -557,16 +552,20 @@ $('btn-pdf').addEventListener('click', function(){
           body:JSON.stringify({action:'upload_pdf', ticket_id:lastTicketId, pdf_data:pdfB64, filename:pdfFilename})
         }).then(function(r){return r.json();})
         .then(function(d){
-          $('ok8').textContent = d.success ? '✓ PDF downloaded and attached to HubSpot!' : '✓ PDF downloaded!';
+          if(d.success){
+            $('ok8').textContent='✓ PDF downloaded and attached to HubSpot note!';
+          } else {
+            $('ok8').textContent='✓ PDF downloaded! (HubSpot attach failed: '+d.error+')';
+          }
           show($('ok8'),true);
         }).catch(function(){ $('ok8').textContent='✓ PDF downloaded!'; show($('ok8'),true); });
       } else {
-        $('ok8').textContent='✓ PDF downloaded!'; show($('ok8'),true);
+        $('ok8').textContent='✓ PDF downloaded!';show($('ok8'),true);
       }
     }catch(e){
-      $('e8').textContent='PDF error: '+e.message; show($('e8'),true);
+      $('e8').textContent='PDF error: '+e.message;show($('e8'),true);
     }
-    btn.disabled=false; lbl.textContent='⬇ Download PDF'; spin.style.display='none';
+    btn.disabled=false;lbl.textContent='⬇ Download PDF';spin.style.display='none';
   }
 
   if(window.jspdf){ run(window.jspdf.jsPDF); return; }
@@ -574,8 +573,8 @@ $('btn-pdf').addEventListener('click', function(){
   s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
   s.onload=function(){run(window.jspdf.jsPDF);};
   s.onerror=function(){
-    $('e8').textContent='Failed to load PDF library.'; show($('e8'),true);
-    btn.disabled=false; lbl.textContent='⬇ Download PDF'; spin.style.display='none';
+    $('e8').textContent='Failed to load PDF library. Check your connection.';
+    show($('e8'),true);btn.disabled=false;lbl.textContent='⬇ Download PDF';spin.style.display='none';
   };
   document.head.appendChild(s);
 });
@@ -583,35 +582,55 @@ $('btn-pdf').addEventListener('click', function(){
 // ── HubSpot ───────────────────────────────────────────────────────────────
 $('btn-hs').addEventListener('click', function(){
   show($('e8'),false); show($('ok8'),false);
-  var btn=$('btn-hs'), lbl=$('lbl-hs'), spin=$('spin-hs');
-  btn.disabled=true; lbl.textContent='Creating...'; spin.style.display='inline-block';
+  var btn=$('btn-hs'),lbl=$('lbl-hs'),spin=$('spin-hs');
+  btn.disabled=true;lbl.textContent='Creating...';spin.style.display='inline-block';
 
   var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
   var productFull = D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'');
   var qtyStr = D.qty+' piece'+(parseInt(D.qty)>1?'s':'');
+
   var ticketName = D.po+' - '+D.product;
 
   var description = [
-    'Type: '+D.type+' Claim','',
+    'Type: '+D.type+' Claim',
+    '',
     'HSM / PO: '+D.po,
     'Product: '+productFull,
     'Defective Qty: '+qtyStr,
-    'Supplier: '+D.supplier,'',
-    'DEFECT:', D.defect,'',
+    'Supplier: '+D.supplier,
+    '',
+    'DEFECT:',
+    D.defect,
+    '',
     'External Resolution: '+D.ext_res+(D.ext_det?' — '+D.ext_det:''),
     'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),
   ].join('\n');
 
   var noteBody = [
     '--- DEFECT CLAIM: '+D.claimNum+' ---',
-    'Date: '+date, 'Type: '+D.type+' Claim','',
-    'HSM / PO: '+D.po, 'Product: '+productFull,
-    'Defective Qty: '+qtyStr, 'Supplier: '+D.supplier,'',
-    'DEFECT:', D.defect,'',
+    'Date: '+date,
+    'Type: '+D.type+' Claim',
+    '',
+    'HSM / PO: '+D.po,
+    'Product: '+productFull,
+    'Defective Qty: '+qtyStr,
+    'Supplier: '+D.supplier,
+    '',
+    'DEFECT:',
+    D.defect,
+    '',
     'External Resolution: '+D.ext_res+(D.ext_det?' — '+D.ext_det:''),
-    'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),'',
+    'Internal Resolution: '+D.int_res+(D.int_det?' — '+D.int_det:''),
+    '',
     'Media: '+D.media.filter(function(m){return !m.isVid;}).length+' photo(s), '+D.media.filter(function(m){return m.isVid;}).length+' video(s)',
   ].join('\n');
+  // Videos cannot be uploaded to HubSpot Files API - list names in note
+  var videoFiles = D.media.filter(function(m){return m.isVid;});
+  if(videoFiles.length > 0){
+    noteBody += '\n\n--- VIDEOS (upload manually) ---\n';
+    videoFiles.forEach(function(v,i){ noteBody += (i+1)+'. '+v.name+'\n'; });
+  }
+  // noteBody is also used as the ticket description fallback
 
   var supplierMap = {
     'Century':'century','Woods':'harmony_brazil','Arbosso':'Arbosso',
@@ -622,9 +641,14 @@ $('btn-hs').addEventListener('click', function(){
   var supplierVal = supplierMap[D.supplier] || D.supplier;
   var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
 
+  // Build photo links inline in description (base64 thumbnails as data URIs in note)
   var photos = D.media.filter(function(m){return !m.isVid;});
-  var videoFiles = D.media.filter(function(m){return m.isVid;});
+  var photoSection = '';
+  if(photos.length > 0){
+    photoSection = '\n\nPHOTOS ATTACHED: '+photos.length+' image'+(photos.length>1?'s':'')+' (see note in HubSpot)';
+  }
 
+  // Single API call — everything in one shot
   fetch(WORKER, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -632,7 +656,7 @@ $('btn-hs').addEventListener('click', function(){
       action: 'create_ticket_full',
       ticket: {
         subject: ticketName,
-        content: description,
+        content: description + photoSection,
         hs_ticket_priority: D.type==='External'?'HIGH':'MEDIUM',
         hs_pipeline: D.type==='External'?'0':'136340495',
         hs_pipeline_stage: D.type==='External'?'1':'235011235',
@@ -640,32 +664,22 @@ $('btn-hs').addEventListener('click', function(){
         hubspot_owner_id: '77262383',
       },
       note: noteBody,
-      photos: photos.map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};}),
-      videos: videoFiles.map(function(v){return {name:v.name, data:v.data, type:v.type||'video/mp4'};})
+      photos: photos.map(function(p){return {name:p.name, data:p.data, type:p.type||'image/jpeg'};})
     })
   })
   .then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});})
   .then(function(r){
     if(!r.ok) throw new Error(r.data.message||JSON.stringify(r.data));
     var ticketId = r.data.ticket_id;
-    window._lastTicketId = ticketId;
+    window._lastTicketId = ticketId; // store for PDF upload
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
-
-    // Store photo URLs back into D.media
+    // Store uploaded URLs back into media array for PDF (photos and videos)
     if(r.data.photo_urls && r.data.photo_urls.length > 0){
-      r.data.photo_urls.forEach(function(u){
-        D.media.forEach(function(m){
-          if(!m.isVid && u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
-            m.hsUrl = u.url;
-          }
-        });
-      });
-    }
-    // Store video URLs back into D.media
-    if(r.data.video_urls && r.data.video_urls.length > 0){
-      r.data.video_urls.forEach(function(u){
-        D.media.forEach(function(m){
-          if(m.isVid && u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
+      var uploadedUrls = r.data.photo_urls;
+      // Match by name since order may differ
+      D.media.forEach(function(m){
+        uploadedUrls.forEach(function(u){
+          if(u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
             m.hsUrl = u.url;
           }
         });
@@ -676,16 +690,17 @@ $('btn-hs').addEventListener('click', function(){
     if(r.data.note_id) msg += '<br><small>✓ Note created</small>';
     else msg += '<br><small style="color:#c0392b">✗ Note error: '+JSON.stringify(r.data.note_error)+'</small>';
     if(r.data.photos_uploaded > 0) msg += '<br><small>✓ '+r.data.photos_uploaded+' photo(s) uploaded</small>';
-    if(r.data.photos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.photos_failed+' photo(s) failed</small>';
-    if(r.data.videos_uploaded > 0) msg += '<br><small>✓ '+r.data.videos_uploaded+' video(s) uploaded</small>';
-    if(r.data.videos_failed > 0) msg += '<br><small style="color:#c0392b">✗ '+r.data.videos_failed+' video(s) failed</small>';
-    msg += '<br><small style="color:#888">📄 Generating PDF...</small>';
+    if(r.data.photos_failed > 0){
+      var perrs = (r.data.photo_errors||[]).join(' | ');
+      msg += '<br><small style="color:#c0392b">✗ Photo failed: '+perrs+'</small>';
+    }
+    msg += '<br><small style="color:#888">📄 Generating and attaching PDF...</small>';
     $('ok8').innerHTML = msg;
-    show($('ok8'),true);
-    lbl.textContent='✓ Created'; btn.style.background='#27ae60';
+    show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
 
-    // Auto-generate and attach PDF
+    // Auto-generate PDF — ensure jsPDF loaded first
+    window._lastTicketId = ticketId;
     if(window.jspdf){
       buildAndUploadPDF(ticketId);
     } else {
@@ -697,14 +712,14 @@ $('btn-hs').addEventListener('click', function(){
     }
   })
   .catch(function(e){
-    $('e8').textContent='Error: '+e.message; show($('e8'),true);
-    btn.disabled=false; lbl.textContent='Create Ticket + Send Email'; spin.style.display='none';
+    $('e8').textContent='Error: '+e.message;show($('e8'),true);
+    btn.disabled=false;lbl.textContent='Create Ticket + Send Email';spin.style.display='none';
   });
 });
 
 setStep(1);
 
-// Preload jsPDF
+// Preload jsPDF in background so it's ready when needed
 setTimeout(function(){
   if(!window.jspdf){
     var s=document.createElement('script');
@@ -715,35 +730,130 @@ setTimeout(function(){
 
 })();
 
+function autoGenerateAndUploadPDF(ticketId) {
+  if(window.jspdf){
+    buildAndUploadPDF(ticketId);
+    return;
+  }
+  // Not loaded yet - load and wait
+  var existing = document.querySelector('script[src*="jspdf"]');
+  if(existing){
+    // Script tag exists but not loaded yet - poll
+    var tries = 0;
+    var poll = setInterval(function(){
+      tries++;
+      if(window.jspdf){ clearInterval(poll); buildAndUploadPDF(ticketId); }
+      else if(tries > 20){ clearInterval(poll); appendOk('<br><small style="color:#c0392b">✗ PDF timeout</small>'); }
+    }, 500);
+  } else {
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=function(){ buildAndUploadPDF(ticketId); };
+    s.onerror=function(){ appendOk('<br><small style="color:#c0392b">✗ PDF library failed to load</small>'); };
+    document.head.appendChild(s);
+  }
+}
+
 function appendOk(html){
-  var el=document.getElementById('ok8');
+  var el=$('ok8');
   if(el) el.innerHTML += html;
 }
 
 function buildAndUploadPDF(ticketId) {
   try {
-    var D = window.CLAIM_STATE;
-    var MONO_B64 = window.GLOBAL_MONO_B64;
+    var D = window.CLAIM_STATE; // get state from global
     var jsPDF = window.jspdf.jsPDF;
-    var doc = window.buildPDF(jsPDF, D, MONO_B64);
-    var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
+    var doc = new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    var M=46.8, PW=doc.internal.pageSize.getWidth()-2*M, Y=M;
+    var d=new Date(), date=String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
+    function chk(n){if(Y+n>doc.internal.pageSize.getHeight()-M){doc.addPage();Y=M;}}
+    var mb=atob(GLOBAL_MONO_B64); var ma=new Uint8Array(mb.length);
+    for(var i=0;i<mb.length;i++) ma[i]=mb.charCodeAt(i);
+    doc.addImage(ma,'PNG',M,Y,38,38);
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+    doc.text('Harmony Luxury Furniture',M+50,Y+14);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);
+    doc.text('1551 NW 12th Ave, Pompano Beach, FL 33069  ·  (754) 444-1142',M+50,Y+27);
+    Y+=46;
+    doc.setDrawColor(26,26,26);doc.setLineWidth(1.2);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(26,26,26);
+    doc.text('MANUFACTURING DEFECT CLAIM',M+PW/2,Y+13,{align:'center'});Y+=20;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(136,136,136);
+    doc.text(D.claimNum+'   ·   '+date+'   ·   '+D.type+' Claim',M+PW/2,Y+11,{align:'center'});Y+=20;
+    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=10;
+    var productFull2=D.product+(D.size?' · '+D.size:'')+(D.finish?' · '+D.finish:'');
+    var qtyStr2=D.qty+' piece'+(parseInt(D.qty)>1?'s':'');
+    function infoLine2(lbl,v){chk(16);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,26,26);doc.text(lbl,M,Y+9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);var ls=doc.splitTextToSize(String(v||'-'),PW-95);doc.text(ls,M+95,Y+9);Y+=Math.max(15,ls.length*12)+1;}
+    infoLine2('HSM / PO:',D.po);
+    infoLine2('Product:',productFull2);
+    infoLine2('Defective Qty:',qtyStr2);
+    infoLine2('Supplier:',D.supplier);
+    Y+=4;doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+    doc.text('Defect Description',M,Y+10);Y+=18;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+    var dl=doc.splitTextToSize(D.defect,PW);chk(dl.length*13+10);doc.text(dl,M,Y+10);Y+=dl.length*13+14;
+    doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+    doc.text('Resolution',M,Y+10);Y+=18;
+    function resBox2(t,v,det){chk(40);doc.setFillColor(247,247,247);doc.roundedRect(M,Y,PW,det?34:22,3,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(t,M+10,Y+10);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,26,26);doc.text(v,M+10,Y+22);if(det){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(85,85,85);doc.text(det,M+10,Y+33);Y+=42;}else Y+=30;}
+    resBox2('EXTERNAL — Require from supplier:',D.ext_res,D.ext_det||null);Y+=6;
+    var photos2=D.media.filter(function(m){return !m.isVid;});
+    if(photos2.length>0){
+      chk(30);doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Defect Photos ('+photos2.length+')',M,Y+10);Y+=18;
+      var pw2=(PW-10)/2,ph2=pw2*0.65,col2=0;
+      photos2.forEach(function(p){chk(ph2+10);var x=col2===0?M:M+pw2+10;try{doc.addImage(p.data,'JPEG',x,Y,pw2,ph2);}catch(e){try{doc.addImage(p.data,'PNG',x,Y,pw2,ph2);}catch(e2){}}col2++;if(col2>=2){col2=0;Y+=ph2+8;}});
+      if(col2===1)Y+=ph2+8;
+      // Photo links
+      var linkedPhotos=photos2.filter(function(p){return p.hsUrl;});
+      if(linkedPhotos.length>0){
+        chk(20);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text('Photo Links:',M,Y+10);Y+=16;
+        linkedPhotos.forEach(function(p,i){
+          chk(14);
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(26,86,179);
+          doc.textWithLink((i+1)+'. '+p.name,M,Y+9,{url:p.hsUrl});
+          doc.setTextColor(26,26,26);Y+=13;
+        });
+      }
+    }
+    // Videos section in PDF
+    var videos2=D.media.filter(function(m){return m.isVid;});
+    if(videos2.length>0){
+      chk(30);
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
+      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      videos2.forEach(function(v,i){
+        chk(14);
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+      });
+      Y+=4;
+    }
+    // Signatures removed
 
-    // Save locally
+    // Upload PDF to HubSpot
+    var pdfFilename='Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
+    var pdfB64 = doc.output('datauristring');
+    var WORKER='https://harmony-hubspot.ursula-britto.workers.dev'; // worker URL
+    // Always save PDF locally first
     doc.save(pdfFilename);
 
-    // Upload to HubSpot
-    var pdfB64 = doc.output('datauristring');
-    var WORKER = 'https://harmony-hubspot.ursula-britto.workers.dev';
+    // Then try to upload to HubSpot
     fetch(WORKER,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'upload_pdf', ticket_id:ticketId, pdf_data:pdfB64, filename:pdfFilename})
+      body:JSON.stringify({action:'upload_pdf',ticket_id:ticketId,pdf_data:pdfB64,filename:pdfFilename})
     }).then(function(r){return r.json();})
     .then(function(d){
       if(d.success){
         appendOk('<br><small>✓ PDF downloaded and attached to HubSpot</small>');
       } else {
-        appendOk('<br><small style="color:#c0392b">✗ PDF attach failed: '+(d.error||'unknown')+'</small>');
+        appendOk('<br><small style="color:#c0392b">✗ PDF attach failed: '+(d.error||JSON.stringify(d))+'</small>');
       }
     }).catch(function(e){
       appendOk('<br><small style="color:#c0392b">✗ PDF upload error: '+e.message+'</small>');
@@ -752,6 +862,7 @@ function buildAndUploadPDF(ticketId) {
     appendOk('<br><small style="color:#c0392b">✗ PDF build error: '+e.message+'</small>');
   }
 }
+
 </script>
 </body>
 </html>

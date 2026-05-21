@@ -491,7 +491,12 @@ $('btn-pdf').addEventListener('click', function(){
         if(col===1) Y+=ph+8;
       }
 
-      // Photo links section
+      // Photo & video links section
+      var allMedia = D.media.filter(function(m){ return m.hsUrl; });
+      if(allMedia.length > 0){
+        var photoLinked = allMedia.filter(function(m){ return !m.isVid; });
+        var videoLinked = allMedia.filter(function(m){ return m.isVid; });
+      }
       if(photos.length > 0){
         chk(30);
         doc.setDrawColor(204,204,204);doc.setLineWidth(0.5);doc.line(M,Y,M+PW,Y);Y+=8;
@@ -513,7 +518,22 @@ $('btn-pdf').addEventListener('click', function(){
         Y+=4;
       }
 
-      // Signatures removed
+      // Videos section in PDF
+    var videos2=D.media.filter(function(m){return m.isVid;});
+    if(videos2.length>0){
+      chk(30);
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
+      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      videos2.forEach(function(v,i){
+        chk(14);
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+      });
+      Y+=4;
+    }
+    // Signatures removed
 
       var pdfFilename = 'Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
       doc.save(pdfFilename);
@@ -601,6 +621,12 @@ $('btn-hs').addEventListener('click', function(){
     '',
     'Media: '+D.media.filter(function(m){return !m.isVid;}).length+' photo(s), '+D.media.filter(function(m){return m.isVid;}).length+' video(s)',
   ].join('\n');
+  // Videos cannot be uploaded to HubSpot Files API - list names in note
+  var videoFiles = D.media.filter(function(m){return m.isVid;});
+  if(videoFiles.length > 0){
+    noteBody += '\n\n--- VIDEOS (upload manually) ---\n';
+    videoFiles.forEach(function(v,i){ noteBody += (i+1)+'. '+v.name+'\n'; });
+  }
   // noteBody is also used as the ticket description fallback
 
   var supplierMap = {
@@ -644,11 +670,16 @@ $('btn-hs').addEventListener('click', function(){
     var ticketId = r.data.ticket_id;
     window._lastTicketId = ticketId; // store for PDF upload
     var url='https://app.hubspot.com/contacts/46722830/tickets/'+ticketId;
-    // Store uploaded photo URLs back into photos array for PDF
+    // Store uploaded URLs back into media array for PDF (photos and videos)
     if(r.data.photo_urls && r.data.photo_urls.length > 0){
       var uploadedUrls = r.data.photo_urls;
-      photos.forEach(function(p, i){
-        if(uploadedUrls[i]) p.hsUrl = uploadedUrls[i].url;
+      // Match by name since order may differ
+      D.media.forEach(function(m){
+        uploadedUrls.forEach(function(u){
+          if(u.name && m.name && u.name.indexOf(m.name.replace(/\.\w+$/, '')) === 0){
+            m.hsUrl = u.url;
+          }
+        });
       });
     }
 
@@ -665,9 +696,17 @@ $('btn-hs').addEventListener('click', function(){
     show($('ok8'),true);lbl.textContent='✓ Created';btn.style.background='#27ae60';
     spin.style.display='none';
 
-    // Auto-generate PDF and upload to HubSpot
+    // Auto-generate PDF — ensure jsPDF loaded first
     window._lastTicketId = ticketId;
-    setTimeout(function(){ autoGenerateAndUploadPDF(ticketId); }, 500);
+    if(window.jspdf){
+      buildAndUploadPDF(ticketId);
+    } else {
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload=function(){ buildAndUploadPDF(ticketId); };
+      s.onerror=function(){ appendOk('<br><small style="color:#c0392b">✗ PDF lib failed</small>'); };
+      document.head.appendChild(s);
+    }
   })
   .catch(function(e){
     $('e8').textContent='Error: '+e.message;show($('e8'),true);
@@ -777,12 +816,31 @@ function buildAndUploadPDF(ticketId) {
         });
       }
     }
+    // Videos section in PDF
+    var videos2=D.media.filter(function(m){return m.isVid;});
+    if(videos2.length>0){
+      chk(30);
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(26,26,26);
+      doc.text('Video Files ('+videos2.length+')',M,Y+10);Y+=16;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(85,85,85);
+      doc.text('Videos must be shared separately (WhatsApp/Email):',M,Y+10);Y+=14;
+      videos2.forEach(function(v,i){
+        chk(14);
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(26,26,26);
+        doc.text((i+1)+'. '+v.name,M,Y+9);Y+=13;
+      });
+      Y+=4;
+    }
     // Signatures removed
 
     // Upload PDF to HubSpot
     var pdfFilename='Claim_'+D.claimNum+'_'+D.po.replace(/[^a-z0-9]/gi,'_')+'.pdf';
     var pdfB64 = doc.output('datauristring');
     var WORKER='https://harmony-hubspot.ursula-britto.workers.dev'; // worker URL
+    // Always save PDF locally first
+    doc.save(pdfFilename);
+
+    // Then try to upload to HubSpot
     fetch(WORKER,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -790,16 +848,12 @@ function buildAndUploadPDF(ticketId) {
     }).then(function(r){return r.json();})
     .then(function(d){
       if(d.success){
-        appendOk('<br><small>✓ PDF attached to HubSpot</small>');
-        // Also trigger download
-        doc.save(pdfFilename);
+        appendOk('<br><small>✓ PDF downloaded and attached to HubSpot</small>');
       } else {
-        appendOk('<br><small style="color:#c0392b">✗ PDF attach failed: '+d.error+'</small>');
-        doc.save(pdfFilename);
+        appendOk('<br><small style="color:#c0392b">✗ PDF attach failed: '+(d.error||JSON.stringify(d))+'</small>');
       }
     }).catch(function(e){
-      appendOk('<br><small style="color:#c0392b">✗ PDF error: '+e.message+'</small>');
-      doc.save(pdfFilename);
+      appendOk('<br><small style="color:#c0392b">✗ PDF upload error: '+e.message+'</small>');
     });
   } catch(e) {
     appendOk('<br><small style="color:#c0392b">✗ PDF build error: '+e.message+'</small>');
